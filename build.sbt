@@ -44,7 +44,6 @@ lazy val codeInsight = newProject("codeInsight", file("scala/codeInsight"))
 lazy val scalaImpl: sbt.Project =
   newProject("scala-impl", file("scala/scala-impl"))
     .dependsOn(
-      scalaFmtBin,
       compilerShared,
       scalaApi,
       macroAnnotations,
@@ -56,7 +55,7 @@ lazy val scalaImpl: sbt.Project =
       javacOptions in Global ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked"),
       scalacOptions in Global ++= Seq("-target:jvm-1.8", "-deprecation"),
       //scalacOptions in Global += "-Xmacro-settings:analyze-caches",
-      libraryDependencies ++= DependencyGroups.scalaCommunity ++ scalaFmtDynamicDepsTmp,
+      libraryDependencies ++= DependencyGroups.scalaCommunity,
       addCompilerPlugin(Dependencies.macroParadise),
       ideaInternalPlugins := Seq(
         "IntelliLang",
@@ -102,19 +101,6 @@ lazy val scalaImpl: sbt.Project =
           LocalRepoPackager.relativeJarPath1("sbt-structure-extractor", Versions.sbtStructureVersion))
       )
     )
-
-lazy val scalaFmtBin: sbt.Project =
-  newProject("scalaFmtBin", file("scalaFmtBin"))
-    .settings(
-      libraryDependencies ++= Dependencies.scalafmt,
-      packageMethod       :=  PackagingMethod.DepsOnly("lib/scalafmt-bundle.jar"),
-      shadePatterns       +=  ShadePattern("scala.meta.**", "scalafmt.scala.meta.@1"),
-      packageAssembleLibraries := true
-    )
-
-lazy val scalaFmtDynamicDepsTmp: Seq[ModuleID] = Seq(
-  "com.geirsson" %% "coursier-small" % "1.3.1"
-)
 
 lazy val compilerJps =
   newProject("compiler-jps", file("scala/compiler-jps"))
