@@ -10,6 +10,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ex.ApplicationUtil
 import com.intellij.openapi.application.{ApplicationManager, TransactionGuard}
 import com.intellij.openapi.command.{CommandProcessor, UndoConfirmationPolicy, WriteCommandAction}
+import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.progress.{ProcessCanceledException, ProgressManager}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.{Computable, Ref, TextRange, ThrowableComputable}
@@ -26,7 +27,6 @@ import com.intellij.util.{ArrayFactory, Processor}
 import org.jetbrains.plugins.scala.extensions.implementation.iterator._
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.ScalaPsiUtil.isInheritorDeep
-import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScBindingPattern
 import org.jetbrains.plugins.scala.lang.psi.api.base.{ScFieldId, ScPrimaryConstructor}
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScNewTemplateDefinition
@@ -34,6 +34,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScClassParame
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScDeclaredElementsHolder, ScFunction}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.{ScModifierListOwner, ScNamedElement, ScTypedDefinition}
+import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.fake.FakePsiParameter
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticClass
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.MixinNodes
@@ -395,6 +396,10 @@ package object extensions {
     val Parentheses = new Val("(", ")")
     val Braces = new Val("{", "}")
     val SquareBrackets = new Val("[", "]")
+  }
+
+  implicit class RangeMarkerExt(val marker: RangeMarker) extends AnyVal {
+    def getTextRange: TextRange = TextRange.create(marker.getStartOffset, marker.getEndOffset)
   }
 
   implicit class PsiElementExt[E <: PsiElement](val element: E) extends AnyVal {
