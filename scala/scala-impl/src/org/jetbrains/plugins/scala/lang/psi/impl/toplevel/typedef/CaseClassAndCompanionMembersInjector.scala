@@ -2,8 +2,8 @@ package org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef
 import org.jetbrains.plugins.scala.extensions.{Model, StringsExt}
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScPrimaryConstructor
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction.CommonNames._
-import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, ScParameterClause}
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScObject, ScTypeDefinition}
+import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, ScParameterClause, ScTypeParam}
+import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScTypeDefinition}
 import org.jetbrains.plugins.scala.util.CommonQualifiedNames._
 
 class CaseClassAndCompanionMembersInjector extends SyntheticMembersInjector {
@@ -12,10 +12,9 @@ class CaseClassAndCompanionMembersInjector extends SyntheticMembersInjector {
     source match {
       case ObjectWithCaseClassCompanion(_, c: ScClass) =>
 
-        val className = c.name
-
-        val typeArgs = typeArgsFromTypeParams(c)
-        val typeParamsDefinition = c.typeParamString
+        val className            = c.name
+        val typeArgs             = typeArgsFromTypeParams(c)
+        val typeParamsDefinition = typeParamNamesString(c.typeParameters)
 
         val unapply: Option[String] =
           if (c.tooBigForUnapply) None
@@ -116,14 +115,25 @@ class CaseClassAndCompanionMembersInjector extends SyntheticMembersInjector {
   private def defaultExpressionString(p: ScParameter): String =
     if (p.isDefaultParam) " = " + p.getDefaultExpression.fold("{}")(_.getText) else ""
 
+  private[this] def typeParamNamesString(tparams: Seq[ScTypeParam]): String =
+    if (tparams.isEmpty) ""
+    else                 tparams.map(_.name).mkString("[", ",", "]")
+
   private def copyMethodText(caseClass: ScClass): Option[String] = {
     caseClass.constructor
       .map(_.effectiveParameterClauses)
       .map { clauses =>
         val className = caseClass.name
 
-        val paramString = asFunctionParameters(clauses, defaultParamString = p => s" = $className.this.${p.name}")
-        val typeParamsDefinition = caseClass.typeParamString
+        val (clauseWithDefault, restClauses) =
+          if (clauses.isEmpty) (Seq.empty, Seq.empty)
+          else                 clauses.splitAt(1)
+
+        val paramString =
+          asFunctionParameters(clauseWithDefault, defaultParamString = p => s" = $className.this.${p.name}") +
+            asFunctionParameters(restClauses, defaultExpressionString)
+
+        val typeParamsDefinition = typeParamNamesString(caseClass.typeParameters)
         val returnType = className + typeArgsFromTypeParams(caseClass)
         "def copy" + typeParamsDefinition + paramString + " : " + returnType + " = throw new Error(\"\")"
     }
